@@ -1,0 +1,21 @@
+node_modules/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local screenshot and review artifacts
+cleanup-*.png
+final-check.png
+landing-*.png
+mobile-shot.png
+redhat-*.png
+topology-*.png
+
+# Misc
+.DS_Store
