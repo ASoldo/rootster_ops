@@ -1,0 +1,12 @@
+{
+  "name": "rootster-ops-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive platform engineering landing page with Playwright verification.",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}

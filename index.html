@@ -1,0 +1,3086 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rootster | Mission-Grade Platform Engineering</title>
+    <meta
+      name="description"
+      content="Rootster builds mission-grade Kubernetes, GitOps, secure delivery, edge, and systems engineering platforms."
+    />
+    <meta name="author" content="Rootster" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #12090b;
+        --bg-soft: #1b1013;
+        --panel: rgba(28, 18, 21, 0.82);
+        --panel-strong: rgba(21, 13, 16, 0.92);
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --text: #f5efed;
+        --muted: #b8a8ac;
+        --accent: #ee0000;
+        --accent-soft: rgba(238, 0, 0, 0.18);
+        --mint: #78f2c8;
+        --mint-soft: rgba(120, 242, 200, 0.16);
+        --sun: #ffd479;
+        --cyan: #65d8ff;
+        --shadow: 0 30px 120px rgba(0, 0, 0, 0.42);
+        --radius-xl: 32px;
+        --radius-lg: 24px;
+        --radius-md: 18px;
+        --radius-sm: 999px;
+        --container: min(1200px, calc(100vw - 2rem));
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 12% 18%, rgba(238, 0, 0, 0.2), transparent 28%),
+          radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.05), transparent 22%),
+          radial-gradient(circle at 70% 74%, rgba(238, 0, 0, 0.08), transparent 26%),
+          linear-gradient(180deg, #12090b 0%, #170c0e 42%, #0f0708 100%);
+        font-family: "Space Grotesk", sans-serif;
+        overflow-x: hidden;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      #system-canvas {
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+        width: 100%;
+        height: 100%;
+        opacity: 0.7;
+        filter: saturate(0.9) blur(0.35px);
+      }
+
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 100%);
+        pointer-events: none;
+      }
+
+      .backdrop::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at center, transparent 0, rgba(18, 9, 11, 0.2) 54%, rgba(12, 7, 8, 0.96) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='.04'%3E%3Ccircle cx='12' cy='12' r='1'/%3E%3Ccircle cx='96' cy='54' r='1'/%3E%3Ccircle cx='164' cy='112' r='1'/%3E%3Ccircle cx='48' cy='160' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.78;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        width: 100%;
+        backdrop-filter: blur(18px);
+        background: linear-gradient(180deg, rgba(18, 9, 11, 0.92), rgba(18, 9, 11, 0.68));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .header-inner {
+        width: var(--container);
+        margin: 0 auto;
+        padding: 1rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.9rem;
+      }
+
+      .brand-badge {
+        display: grid;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(145deg, rgba(238, 0, 0, 0.32), rgba(255, 255, 255, 0.06)),
+          rgba(255, 255, 255, 0.04);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.92rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .brand-copy {
+        display: grid;
+        gap: 0.15rem;
+      }
+
+      .brand-copy strong {
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-copy span {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .header-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .header-nav a {
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-sm);
+        color: var(--muted);
+        font-size: 0.88rem;
+        border: 1px solid transparent;
+        transition: 180ms ease;
+      }
+
+      .header-nav a:hover,
+      .header-nav a:focus-visible {
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        outline: none;
+      }
+
+      main {
+        position: relative;
+      }
+
+      .section {
+        width: var(--container);
+        margin: 0 auto;
+        padding: 7rem 0;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: #dce6e1;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent), var(--sun));
+        box-shadow: 0 0 20px rgba(255, 131, 82, 0.6);
+      }
+
+      .hero {
+        padding-top: 5.5rem;
+      }
+
+      .hero-grid {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+      }
+
+      .hero-copy h1 {
+        margin: 1.15rem 0 1rem;
+        font-size: clamp(3.2rem, 7.2vw, 6.4rem);
+        line-height: 0.92;
+        letter-spacing: -0.045em;
+        max-width: 10ch;
+      }
+
+      .hero-copy p {
+        margin: 0;
+        max-width: 60ch;
+        color: var(--muted);
+        font-size: 1.08rem;
+        line-height: 1.75;
+      }
+
+      .hero-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem;
+        min-height: 3.3rem;
+        padding: 0 1.3rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        transition: 180ms ease;
+      }
+
+      .button strong {
+        font-size: 0.92rem;
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.2);
+        outline: none;
+      }
+
+      .button.primary {
+        background:
+          linear-gradient(135deg, rgba(238, 0, 0, 0.34), rgba(255, 122, 89, 0.18)),
+          rgba(255, 255, 255, 0.06);
+        box-shadow: 0 14px 40px rgba(238, 0, 0, 0.18);
+      }
+
+      .hero-stack {
+        margin-top: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.72rem 0.95rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.025);
+        color: #dce6e1;
+        font-size: 0.88rem;
+      }
+
+      .chip::before {
+        content: "";
+        width: 0.48rem;
+        height: 0.48rem;
+        border-radius: 999px;
+        background: currentColor;
+        opacity: 0.85;
+      }
+
+      .chip.accent {
+        color: var(--accent);
+      }
+
+      .chip.mint {
+        color: var(--mint);
+      }
+
+      .chip.cyan {
+        color: var(--cyan);
+      }
+
+      .hero-panel {
+        position: relative;
+        overflow: hidden;
+        min-height: auto;
+        padding: 1.45rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at 50% 0%, rgba(238, 0, 0, 0.16), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+          var(--panel-strong);
+        box-shadow: var(--shadow);
+        isolation: isolate;
+        backdrop-filter: blur(24px) saturate(110%);
+      }
+
+      .hero-panel::before {
+        content: "";
+        position: absolute;
+        inset: -20% -10% auto;
+        height: 12rem;
+        background: linear-gradient(180deg, rgba(238, 0, 0, 0.16), transparent);
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      .hero-panel-head {
+        max-width: 52rem;
+        margin-bottom: 1.35rem;
+      }
+
+      .hero-panel-head h2 {
+        max-width: 14ch;
+      }
+
+      .hero-panel-head p {
+        max-width: 44rem;
+      }
+
+      .system-shell {
+        position: relative;
+        margin-top: 1.35rem;
+      }
+
+      .system-shell::before {
+        content: none;
+      }
+
+      .system-controls {
+        position: relative;
+        display: grid;
+        gap: 1rem;
+        z-index: 2;
+      }
+
+      .system-button-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        z-index: 2;
+      }
+
+      .system-core {
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        padding: 1.25rem;
+        border-radius: var(--radius-lg);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.84);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        align-items: start;
+        text-align: left;
+        z-index: 3;
+        backdrop-filter: blur(18px);
+        transition: border-color 220ms ease, background 220ms ease;
+      }
+
+      .system-core.is-highlighted {
+        border-color: color-mix(in srgb, var(--preview-highlight, var(--accent)) 46%, rgba(255, 255, 255, 0.12));
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+          color-mix(in srgb, var(--preview-highlight, var(--accent)) 10%, rgba(27, 17, 20, 0.9));
+      }
+
+      .system-core strong {
+        display: inline-flex;
+        font-size: 0.74rem;
+        font-family: "IBM Plex Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--mint);
+      }
+
+      .system-core span {
+        display: block;
+        margin-top: 0.42rem;
+        width: auto;
+        font-size: 1.28rem;
+        line-height: 1.15;
+      }
+
+      .system-core p {
+        margin: 0.55rem 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .orbit-node {
+        position: relative;
+        display: grid;
+        justify-items: start;
+        gap: 0.35rem;
+        width: 100%;
+        max-width: none;
+        min-height: 0;
+        padding: 1rem 1.05rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.84);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-align: left;
+        cursor: pointer;
+        z-index: 4;
+        transition:
+          border-color 220ms ease,
+          box-shadow 220ms ease,
+          background 220ms ease,
+          opacity 220ms ease,
+          filter 220ms ease,
+          transform 220ms ease;
+        backdrop-filter: blur(18px);
+      }
+
+      .orbit-node:hover,
+      .orbit-node:focus-visible {
+        border-color: rgba(255, 255, 255, 0.16);
+        outline: none;
+      }
+
+      .orbit-node.is-muted {
+        opacity: 0.68;
+      }
+
+      .orbit-node.is-highlighted {
+        border-color: color-mix(in srgb, var(--preview-highlight, var(--accent)) 50%, rgba(255, 255, 255, 0.16));
+        background:
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0.02)
+          ),
+          color-mix(in srgb, var(--preview-highlight, var(--accent)) 10%, rgba(27, 17, 20, 0.9));
+        filter: saturate(112%);
+      }
+
+      .orbit-label {
+        font-size: 0.82rem;
+        line-height: 1.2;
+      }
+
+      .orbit-node small {
+        color: var(--muted);
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        line-height: 1.35;
+      }
+
+      .orbit-node[data-scene="orchestrate"] {
+        color: var(--mint);
+      }
+
+      .orbit-node[data-scene="delivery"] {
+        color: var(--accent);
+      }
+
+      .orbit-node[data-scene="security"] {
+        color: var(--sun);
+      }
+
+      .orbit-node[data-scene="edge"] {
+        color: var(--cyan);
+      }
+
+      .orbit-node[data-scene="build"] {
+        color: #b9c4ff;
+      }
+
+      .orbit-1 {
+        grid-column: span 2;
+      }
+
+      .orbit-2 {
+        grid-column: auto;
+      }
+
+      .orbit-3 {
+        grid-column: auto;
+      }
+
+      .orbit-4 {
+        grid-column: auto;
+      }
+
+      .orbit-5 {
+        grid-column: auto;
+      }
+
+      .system-core-meta {
+        margin-top: 0.9rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .system-core-meta span {
+        padding: 0.5rem 0.72rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: #dce6e1;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .hero-metrics {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .metric-card {
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(26, 17, 20, 0.82);
+        backdrop-filter: blur(18px);
+      }
+
+      .metric-card strong {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.05em;
+        font-size: 1.55rem;
+        letter-spacing: -0.04em;
+        white-space: nowrap;
+      }
+
+      .count-inline {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.04em;
+        white-space: nowrap;
+      }
+
+      .metric-card > span {
+        display: block;
+        margin-top: 0.4rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .section-head {
+        display: grid;
+        gap: 0.9rem;
+        max-width: 48rem;
+        margin-bottom: 2.5rem;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: clamp(2.2rem, 4vw, 3.6rem);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+
+      .section-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.8;
+      }
+
+      .story-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.86fr) minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+      }
+
+      .story-panel {
+        position: sticky;
+        top: 6.5rem;
+      }
+
+      .visual-card {
+        overflow: hidden;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+          var(--panel-strong);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(22px) saturate(110%);
+      }
+
+      .visual-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .visual-inner {
+        padding: 1.4rem;
+      }
+
+      .visual-inner h3 {
+        margin: 0.2rem 0 0.6rem;
+        font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+        line-height: 1;
+      }
+
+      .visual-inner p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.8;
+        max-width: 34ch;
+      }
+
+      .scene-spectrum {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.45rem;
+        margin: 1.8rem 0;
+      }
+
+      .scene-bar {
+        position: relative;
+        min-height: 8.5rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+      }
+
+      .scene-bar::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: calc(var(--level, 0.4) * 100%);
+        border-radius: inherit;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), var(--scene-color, var(--accent)));
+        box-shadow: 0 0 28px color-mix(in srgb, var(--scene-color, var(--accent)) 40%, transparent);
+        transition: height 450ms ease, background 280ms ease;
+      }
+
+      .visual-tech {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+      }
+
+      .visual-tech span {
+        padding: 0.7rem 0.9rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(255, 255, 255, 0.03);
+        color: #dce6e1;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .visual-stats {
+        margin-top: 1.4rem;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .visual-stat {
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(28, 18, 21, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .visual-stat strong {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.88rem;
+        color: #dce6e1;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .visual-stat span {
+        display: block;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .story-steps {
+        display: grid;
+        gap: 1rem;
+        padding-block: 14vh 22vh;
+      }
+
+      .story-card {
+        position: relative;
+        overflow: hidden;
+        padding: 1.35rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.84);
+        transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+        backdrop-filter: blur(20px) saturate(110%);
+        cursor: pointer;
+      }
+
+      .story-card::before {
+        content: "";
+        position: absolute;
+        inset: auto -10% -22% 30%;
+        height: 10rem;
+        background: radial-gradient(circle, color-mix(in srgb, var(--card-color, var(--accent)) 24%, transparent), transparent 65%);
+        opacity: 0.75;
+        pointer-events: none;
+      }
+
+      .story-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .story-card.active {
+        border-color: color-mix(in srgb, var(--card-color, var(--accent)) 54%, rgba(255, 255, 255, 0.12));
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+          color-mix(in srgb, var(--card-color, var(--accent)) 12%, rgba(26, 16, 19, 0.9));
+      }
+
+      .story-card strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.77rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .story-card strong::before {
+        content: "";
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 999px;
+        background: var(--card-color, var(--accent));
+        box-shadow: 0 0 18px color-mix(in srgb, var(--card-color, var(--accent)) 50%, transparent);
+      }
+
+      .story-card h3 {
+        margin: 1rem 0 0.55rem;
+        font-size: 1.65rem;
+        line-height: 1.05;
+      }
+
+      .story-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+
+      .story-card .tag-row {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+
+      .story-card .tag-row span {
+        padding: 0.5rem 0.7rem;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.8rem;
+        color: #dce6e1;
+      }
+
+      .cap-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .cap-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 15rem;
+        padding: 1.25rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.86);
+        transition: transform 220ms ease, border-color 220ms ease;
+        backdrop-filter: blur(20px) saturate(110%);
+        cursor: pointer;
+      }
+
+      .cap-card:hover,
+      .cap-card:focus-within {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .cap-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -28%;
+        height: 10rem;
+        background: radial-gradient(circle, color-mix(in srgb, var(--cap-color, var(--accent)) 22%, transparent), transparent 70%);
+        opacity: 0.85;
+        pointer-events: none;
+      }
+
+      .cap-card strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .cap-card strong::before {
+        content: "";
+        width: 0.58rem;
+        height: 0.58rem;
+        border-radius: 999px;
+        background: var(--cap-color, var(--accent));
+      }
+
+      .cap-card h3 {
+        margin: 1rem 0 0.6rem;
+        font-size: 1.4rem;
+      }
+
+      .cap-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .cap-card .cap-tags {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .cap-card .cap-tags span {
+        padding: 0.45rem 0.65rem;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.77rem;
+        color: #dce6e1;
+      }
+
+      .flow-card {
+        padding: 1.35rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+          var(--panel-strong);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(22px) saturate(110%);
+      }
+
+      .pipeline {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.85rem;
+      }
+
+      .pipeline-step {
+        position: relative;
+        padding: 1.1rem;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(28, 18, 21, 0.82);
+      }
+
+      .pipeline-step:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 1.5rem;
+        left: calc(100% + 0.25rem);
+        width: 0.35rem;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.34), transparent);
+      }
+
+      .pipeline-step strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 0.4rem;
+        font-size: 1rem;
+      }
+
+      .pipeline-step span {
+        display: block;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.92rem;
+      }
+
+      .priority-grid {
+        margin-top: 1.35rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+        gap: 1rem;
+      }
+
+      .priority-card {
+        padding: 1.2rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(28, 18, 21, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .priority-card h3 {
+        margin: 0 0 1rem;
+        font-size: 1.35rem;
+      }
+
+      .priority-rows {
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      .priority-row {
+        display: grid;
+        grid-template-columns: 11rem minmax(0, 1fr) 2.5rem;
+        gap: 0.8rem;
+        align-items: center;
+      }
+
+      .priority-row span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .priority-track {
+        position: relative;
+        height: 0.8rem;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+      }
+
+      .priority-track::after {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: calc(var(--score, 0.5) * 100%);
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(238, 0, 0, 0.45), rgba(120, 242, 200, 0.72));
+        box-shadow: 0 0 24px rgba(120, 242, 200, 0.14);
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+      }
+
+      .stat-box {
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(28, 18, 21, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .stat-box strong {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.05em;
+        font-size: 2rem;
+        letter-spacing: -0.05em;
+        white-space: nowrap;
+      }
+
+      .stat-box > span {
+        display: block;
+        margin-top: 0.3rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .tech-group {
+        padding: 1.15rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .tech-group strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.76rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .tech-group strong::before {
+        content: "";
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 999px;
+        background: var(--group-color, var(--accent));
+      }
+
+      .tag-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .tag-cloud button {
+        padding: 0.55rem 0.72rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        color: #dce6e1;
+        font: inherit;
+        font-size: 0.82rem;
+        transition: 180ms ease;
+        cursor: pointer;
+      }
+
+      .tag-cloud button:hover,
+      .tag-cloud button:focus-visible {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--group-color, var(--accent)) 55%, rgba(255, 255, 255, 0.16));
+        color: var(--text);
+        outline: none;
+      }
+
+      .sector-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .sector-card {
+        padding: 1.3rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+          rgba(27, 17, 20, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .sector-card strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.77rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .sector-card strong::before {
+        content: "";
+        width: 0.58rem;
+        height: 0.58rem;
+        border-radius: 999px;
+        background: var(--sector-color, var(--accent));
+      }
+
+      .sector-card h3 {
+        margin: 0 0 0.6rem;
+        font-size: 1.4rem;
+      }
+
+      .sector-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+
+      .sector-card .tag-row {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .sector-card .tag-row span {
+        padding: 0.48rem 0.68rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.78rem;
+        color: #dce6e1;
+      }
+
+      .closing {
+        padding-bottom: 8rem;
+      }
+
+      .closing-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.85fr);
+        gap: 1rem;
+        align-items: stretch;
+        padding: 1.45rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at 80% 20%, rgba(238, 0, 0, 0.16), transparent 24%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+          var(--panel-strong);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(22px) saturate(110%);
+      }
+
+      .closing-copy h2 {
+        margin: 0.5rem 0 0.9rem;
+        font-size: clamp(2rem, 4.5vw, 4rem);
+        line-height: 0.97;
+        letter-spacing: -0.04em;
+      }
+
+      .closing-copy p {
+        margin: 0;
+        max-width: 54ch;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .signal-board {
+        display: grid;
+        gap: 0.9rem;
+        padding: 1rem;
+        border-radius: calc(var(--radius-xl) - 8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(16, 10, 12, 0.8);
+        backdrop-filter: blur(18px);
+      }
+
+      .signal-line {
+        display: grid;
+        grid-template-columns: 8rem 1fr 3rem;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .signal-line span {
+        width: 8rem;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .signal-wave {
+        position: relative;
+        flex: 1;
+        height: 0.85rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+      }
+
+      .signal-wave::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: calc(var(--signal, 0.64) * 100%);
+        border-radius: inherit;
+        background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--signal-color, var(--accent)) 32%, transparent),
+          color-mix(in srgb, var(--signal-color, var(--accent)) 72%, white 8%)
+        );
+        box-shadow: 0 0 20px color-mix(in srgb, var(--signal-color, var(--accent)) 28%, transparent);
+        transition: width 700ms ease, background 400ms ease;
+      }
+
+      .signal-wave::after {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 -30%;
+        width: 34%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.36), transparent);
+        animation: scanWave 2.8s linear infinite;
+      }
+
+      .signal-value {
+        color: var(--text);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-align: right;
+      }
+
+      .footer-note {
+        width: var(--container);
+        margin: 0 auto;
+        padding: 0 0 2rem;
+        color: rgba(245, 239, 237, 0.54);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      @keyframes floatNode {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      @keyframes scanWave {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(420%);
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .hero-grid,
+        .story-grid,
+        .closing-panel,
+        .priority-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .story-panel {
+          position: static;
+        }
+
+        .story-steps {
+          padding-block: 0;
+        }
+
+        .cap-grid,
+        .tech-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .pipeline {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .pipeline-step:nth-child(2n)::after {
+          display: none;
+        }
+
+        .sector-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .section {
+          padding: 5rem 0;
+        }
+
+        .site-header {
+          position: static;
+        }
+
+        .header-inner {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .hero {
+          padding-top: 3rem;
+        }
+
+        .hero-copy h1,
+        .section-head h2,
+        .closing-copy h2 {
+          max-width: none;
+        }
+
+        .hero-metrics,
+        .visual-stats,
+        .stat-grid,
+        .cap-grid,
+        .tech-grid,
+        .pipeline {
+          grid-template-columns: 1fr;
+        }
+
+        .priority-row {
+          grid-template-columns: 1fr;
+        }
+
+        .signal-line {
+          grid-template-columns: 1fr;
+          gap: 0.45rem;
+        }
+
+        .signal-value {
+          text-align: left;
+        }
+
+        .priority-row strong {
+          margin-bottom: -0.2rem;
+        }
+
+        .hero-panel {
+          min-height: auto;
+        }
+
+        .system-shell {
+          min-height: 0;
+        }
+
+        .system-core {
+          width: 100%;
+          min-height: 0;
+          padding: 0.85rem 0.9rem;
+        }
+
+        .system-button-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .orbit-node {
+          max-width: none;
+          min-height: 0;
+          padding: 0.7rem 0.8rem;
+          font-size: 0.72rem;
+        }
+
+        .orbit-1 {
+          grid-column: auto;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+
+        #system-canvas {
+          opacity: 0.45;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="system-canvas" aria-hidden="true"></canvas>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top" aria-label="Back to top">
+          <span class="brand-badge">RS</span>
+          <span class="brand-copy">
+            <strong>Rootster</strong>
+            <span>rootster.xyz</span>
+          </span>
+        </a>
+
+        <nav class="header-nav" aria-label="Sections">
+          <a href="#stack">Architecture</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#flow">Delivery</a>
+          <a href="#surface">Stack</a>
+          <a href="#sectors">Contexts</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section hero" id="top" data-scene="overview">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">DevSecOps / Platform / Edge Systems</span>
+            <h1>Mission-grade GitOps platforms for secure, air-gapped, and edge environments.</h1>
+            <p>
+              Senior platform and DevSecOps engineering centered on Kubernetes, secure CI/CD, GitOps, and edge and
+              on-prem delivery. Built for regulated programs, multi-architecture fleets, constrained networks, and
+              teams that need dependable systems under real operational pressure.
+            </p>
+
+            <div class="hero-actions">
+              <a class="button primary" href="#stack"><strong>Inspect architecture</strong></a>
+              <a class="button" href="#surface"><strong>Review technology stack</strong></a>
+            </div>
+
+            <div class="hero-stack" aria-label="Primary focus areas">
+              <span class="chip accent">Kubernetes</span>
+              <span class="chip mint">GitOps</span>
+              <span class="chip cyan">Secure CI/CD</span>
+              <span class="chip accent">Edge / On-Prem</span>
+              <span class="chip mint">Go / Rust</span>
+            </div>
+
+            <div class="hero-metrics">
+              <div class="metric-card">
+                <strong><span class="count-inline"><span data-counter="10">10</span><span>+</span></span></strong>
+                <span>Years in software systems and delivery engineering.</span>
+              </div>
+              <div class="metric-card">
+                <strong><span class="count-inline"><span data-counter="6">6</span><span>+</span></span></strong>
+                <span>Years focused on secure platforms and automation.</span>
+              </div>
+              <div class="metric-card">
+                <strong>K8s</strong>
+                <span>Kubernetes, K3s, OpenShift, multi-cluster operations.</span>
+              </div>
+              <div class="metric-card">
+                <strong>Go/Rust</strong>
+                <span>Systems tooling, APIs, platform internals, performance work.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-panel">
+            <div class="section-head hero-panel-head">
+              <span class="eyebrow">Operational Surfaces</span>
+              <h2 id="hero-scene-title">Secure control model for distributed systems.</h2>
+              <p id="hero-scene-copy">
+                Select a layer below or move through the architecture to inspect how orchestration, policy, delivery,
+                compute, and application engineering reinforce one operating model.
+              </p>
+            </div>
+
+            <div class="system-shell">
+              <div class="system-controls">
+                <div class="system-core">
+                  <div>
+                    <strong id="system-core-label">Platform View</strong>
+                    <span id="system-core-title">Declarative control model</span>
+                    <p id="system-core-copy">
+                      Kubernetes, GitOps, infrastructure as code, and policy-driven delivery keep the platform
+                      repeatable across secure, on-prem, and edge environments.
+                    </p>
+                    <div class="system-core-meta" id="system-core-tech"></div>
+                  </div>
+                </div>
+                <div class="system-button-grid">
+                  <button type="button" class="orbit-node orbit-1" data-scene="orchestrate" aria-label="Kubernetes control layer">
+                    <span class="orbit-label">Kubernetes</span>
+                    <small>Cluster orchestration across K3s, upstream Kubernetes, and OpenShift.</small>
+                  </button>
+                  <button type="button" class="orbit-node orbit-2" data-scene="delivery" aria-label="ArgoCD and CI delivery layer">
+                    <span class="orbit-label">ArgoCD + CI</span>
+                    <small>Traceable promotion paths, registry flow, and Git-driven deployment control.</small>
+                  </button>
+                  <button type="button" class="orbit-node orbit-3" data-scene="security" aria-label="SELinux and policy layer">
+                    <span class="orbit-label">SELinux / Policy</span>
+                    <small>Hardening, provenance, secrets, and least-privilege delivery enforced in-path.</small>
+                  </button>
+                  <button type="button" class="orbit-node orbit-4" data-scene="edge" aria-label="Jetson and arm64 edge layer">
+                    <span class="orbit-label">Jetson / Arm64</span>
+                    <small>Air-gapped and field-ready runtime targets across mixed architecture fleets.</small>
+                  </button>
+                  <button type="button" class="orbit-node orbit-5" data-scene="build" aria-label="Go and Rust engineering layer">
+                    <span class="orbit-label">Go + Rust</span>
+                    <small>Systems tooling, APIs, and internal platform services built close to the metal.</small>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="stack">
+        <div class="section-head">
+          <span class="eyebrow">Architecture Narrative</span>
+          <h2>Platform architecture for secure, declarative operations.</h2>
+          <p>
+            The operating model is shaped by defense, public-sector, and enterprise programs where compliance
+            boundaries, constrained infrastructure, and field realities are part of the design brief.
+          </p>
+        </div>
+
+        <div class="story-grid">
+          <div class="story-panel">
+            <div class="visual-card">
+              <div class="visual-topline">
+                <span id="scene-code">01 / Overview</span>
+                <span id="scene-state">Operational View</span>
+              </div>
+
+              <div class="visual-inner">
+                <h3 id="scene-title">Declarative control model</h3>
+                <p id="scene-copy">
+                  Kubernetes, GitOps, and infrastructure as code define a repeatable operating model across regulated
+                  and constrained environments.
+                </p>
+
+                <div class="scene-spectrum" id="scene-spectrum" aria-hidden="true"></div>
+                <div class="visual-tech" id="scene-tech"></div>
+
+                <div class="visual-stats" id="scene-stats"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="story-steps">
+            <article
+              class="story-card active"
+              data-scene="overview"
+              data-color="#ee0000"
+              data-code="01 / Overview"
+              data-title="Declarative control plane"
+              data-copy="Kubernetes, GitOps, infrastructure as code, and policy-driven delivery act as one operating surface. The outcome is reproducibility without sacrificing speed."
+              data-tech="Kubernetes,ArgoCD,GitOps,Terraform,Helm,Kustomize"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 01</strong>
+              <h3>Declarative state defines the operating model.</h3>
+              <p>
+                Clusters, overlays, applications, and promotion paths are treated as versioned system state. That keeps
+                deployments reproducible across on-prem, cloud, and edge targets.
+              </p>
+              <div class="tag-row">
+                <span>Cluster topology</span>
+                <span>Promotion workflows</span>
+                <span>Reproducible manifests</span>
+              </div>
+            </article>
+
+            <article
+              class="story-card"
+              data-scene="orchestrate"
+              data-color="#78f2c8"
+              data-code="02 / Orchestrate"
+              data-title="Kubernetes across mixed environments"
+              data-copy="K3s, upstream Kubernetes, and OpenShift show up where the environment demands them. Multi-cluster thinking is part of the baseline, not an upgrade."
+              data-tech="K3s,Kubernetes,OpenShift,Multi-Cluster,ArgoCD,RBAC"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 02</strong>
+              <h3>Orchestration without cloud-only assumptions.</h3>
+              <p>
+                Real deployments include air-gapped sites, field hardware, and tightly controlled networks. The platform
+                adapts to the environment while the control model stays consistent.
+              </p>
+              <div class="tag-row">
+                <span>K3s migrations</span>
+                <span>OpenShift depth</span>
+                <span>Declarative cluster ops</span>
+              </div>
+            </article>
+
+            <article
+              class="story-card"
+              data-scene="security"
+              data-color="#ffd479"
+              data-code="03 / Security"
+              data-title="Security inside the delivery path"
+              data-copy="SELinux, hardened registries, scanning, SBOM-aware pipelines, secrets handling, and least-privilege access control are embedded directly into platform flow."
+              data-tech="SELinux,SBOM,SAST,DAST,Least Privilege,Secrets"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 03</strong>
+              <h3>Security embedded inside the supply chain.</h3>
+              <p>
+                Hardening, policy, scanning, secrets handling, and image provenance are enforced inside the delivery
+                path rather than checked after the fact.
+              </p>
+              <div class="tag-row">
+                <span>Policy enforcement</span>
+                <span>Registry hardening</span>
+                <span>Defense-grade posture</span>
+              </div>
+            </article>
+
+            <article
+              class="story-card"
+              data-scene="delivery"
+              data-color="#ee0000"
+              data-code="04 / Delivery"
+              data-title="Pipelines tuned for traceability"
+              data-copy="Jenkins, GitHub, GitLab, Gitea, Harbor, Zot, Keycloak, Terraform, and Helm combine into secure pipelines with repeatable outcomes and low operational ambiguity."
+              data-tech="Jenkins,GitHub,GitLab,Gitea,Harbor,Zot,Keycloak"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 04</strong>
+              <h3>Delivery that remains legible under scrutiny.</h3>
+              <p>
+                Every artifact, policy gate, registry action, and deployment decision stays explainable under audit,
+                compliance review, or field pressure.
+              </p>
+              <div class="tag-row">
+                <span>Attestation paths</span>
+                <span>Registry workflows</span>
+                <span>Operational clarity</span>
+              </div>
+            </article>
+
+            <article
+              class="story-card"
+              data-scene="edge"
+              data-color="#65d8ff"
+              data-code="05 / Edge"
+              data-title="Edge compute with multi-arch reality"
+              data-copy="Jetson, Blackwell, x86, arm64, on-prem deployments, and constrained-network operations define a platform that survives beyond standard data-center conditions."
+              data-tech="Jetson,Blackwell,arm64,x86,Air-Gapped,On-Prem"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 05</strong>
+              <h3>Edge runtime designed for mixed-architecture fleets.</h3>
+              <p>
+                Architecture has to respect compute variance, multi-architecture images, field operations, and the
+                narrower margins that come with deployed hardware.
+              </p>
+              <div class="tag-row">
+                <span>Arm64 delivery</span>
+                <span>Field operations</span>
+                <span>Constrained environments</span>
+              </div>
+            </article>
+
+            <article
+              class="story-card"
+              data-scene="build"
+              data-color="#b9c4ff"
+              data-code="06 / Build"
+              data-title="Application depth behind the platform"
+              data-copy="Go, Rust, Node.js, Vue 3, Nuxt 4, HTMX, Alpine.js, Tailwind CSS, and Postgres allow the infrastructure work to stay grounded in product and developer experience."
+              data-tech="Go,Rust,Node.js,Vue 3,Nuxt 4,Postgres"
+              tabindex="0"
+              role="button"
+            >
+              <strong>System Layer 06</strong>
+              <h3>Software engineering that strengthens the platform.</h3>
+              <p>
+                Backend services, internal tooling, frontend systems, and data work keep the platform grounded in real
+                delivery needs instead of abstract infrastructure theory.
+              </p>
+              <div class="tag-row">
+                <span>Actix / Chi</span>
+                <span>Nuxt / Vue</span>
+                <span>Postgres tuning</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="capabilities" data-scene="delivery">
+        <div class="section-head">
+          <span class="eyebrow">Core Capabilities</span>
+          <h2>Operational depth across clusters, policy, supply chain, and software delivery.</h2>
+          <p>
+            Each capability block maps to recurring responsibilities: hardened orchestration, traceable delivery,
+            edge deployment, and software systems that support the platform itself.
+          </p>
+        </div>
+
+        <div class="cap-grid">
+          <article class="cap-card" data-scene="orchestrate" style="--cap-color:#78f2c8;" tabindex="0" role="button">
+            <strong>Orchestration</strong>
+            <h3>Kubernetes operating model</h3>
+            <p>
+              Kubernetes, K3s, OpenShift, ArgoCD, RBAC, multi-cluster workflows, and environment promotion patterns.
+            </p>
+            <div class="cap-tags">
+              <span>K8s</span>
+              <span>K3s</span>
+              <span>OpenShift</span>
+              <span>ArgoCD</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="security" style="--cap-color:#ffd479;" tabindex="0" role="button">
+            <strong>Security</strong>
+            <h3>Embedded hardening path</h3>
+            <p>
+              SELinux, registry control, image scanning, SAST/DAST, secrets handling, FIPS/STIG awareness, and
+              least-privilege delivery rails.
+            </p>
+            <div class="cap-tags">
+              <span>SELinux</span>
+              <span>SBOM</span>
+              <span>Scanning</span>
+              <span>IAM</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="delivery" style="--cap-color:#ee0000;" tabindex="0" role="button">
+            <strong>Delivery</strong>
+            <h3>Secure CI/CD and GitOps</h3>
+            <p>
+              Terraform, Helm, Kustomize, Jenkins, GitHub, GitLab, Gitea, Harbor, Zot, and identity-aware promotion
+              pipelines.
+            </p>
+            <div class="cap-tags">
+              <span>Terraform</span>
+              <span>Helm</span>
+              <span>Kustomize</span>
+              <span>Jenkins</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="edge" style="--cap-color:#65d8ff;" tabindex="0" role="button">
+            <strong>Edge</strong>
+            <h3>On-prem and constrained compute</h3>
+            <p>
+              Multi-arch support for x86 and arm64, Jetson and Blackwell targets, air-gapped delivery, and field-ready
+              operating constraints.
+            </p>
+            <div class="cap-tags">
+              <span>Jetson</span>
+              <span>Blackwell</span>
+              <span>arm64</span>
+              <span>Air-gapped</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="build" style="--cap-color:#b9c4ff;" tabindex="0" role="button">
+            <strong>Backend</strong>
+            <h3>Systems code and APIs</h3>
+            <p>
+              Go, Rust, Chi, Actix, Node.js, and distributed service work shaped around performance, reliability, and
+              operability.
+            </p>
+            <div class="cap-tags">
+              <span>Go</span>
+              <span>Rust</span>
+              <span>Chi</span>
+              <span>Actix</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="build" style="--cap-color:#b9c4ff;" tabindex="0" role="button">
+            <strong>Frontend</strong>
+            <h3>Internal tools and web surfaces</h3>
+            <p>
+              Vue 3, Nuxt 4, HTMX, Alpine.js, and Tailwind CSS used to turn platform internals into usable interfaces.
+            </p>
+            <div class="cap-tags">
+              <span>Vue 3</span>
+              <span>Nuxt 4</span>
+              <span>HTMX</span>
+              <span>Tailwind</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="delivery" style="--cap-color:#ee0000;" tabindex="0" role="button">
+            <strong>Operations</strong>
+            <h3>Runbooks, ADRs, and observability</h3>
+            <p>
+              Delivery is backed by operational writing, incident clarity, Git-based workflows, and the tooling needed
+              to keep systems understandable after launch.
+            </p>
+            <div class="cap-tags">
+              <span>Runbooks</span>
+              <span>ADRs</span>
+              <span>Git</span>
+              <span>Monitoring</span>
+            </div>
+          </article>
+
+          <article class="cap-card" data-scene="edge" style="--cap-color:#65d8ff;" tabindex="0" role="button">
+            <strong>AI / ML</strong>
+            <h3>Model-serving aware infrastructure</h3>
+            <p>
+              AI/ML deployment flows, model serving on Kubernetes, MLOps patterns, and agentic automation integrated
+              into practical platform operations.
+            </p>
+            <div class="cap-tags">
+              <span>MLOps</span>
+              <span>Model Serving</span>
+              <span>Agents</span>
+              <span>K8s AI</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="flow" data-scene="delivery">
+        <div class="section-head">
+          <span class="eyebrow">Delivery Architecture</span>
+          <h2>A delivery path built for auditability and field conditions.</h2>
+          <p>
+            From source control to runtime feedback, the system keeps provenance, policy, promotion, and operations
+            aligned across mixed environments.
+          </p>
+        </div>
+
+        <div class="flow-card">
+          <div class="pipeline">
+            <div class="pipeline-step">
+              <strong>Source of truth</strong>
+              <span>Git-based development, ADRs, runbooks, versioned manifests, and environment overlays.</span>
+            </div>
+            <div class="pipeline-step">
+              <strong>Build + verify</strong>
+              <span>Jenkins and other CI surfaces build, test, scan, and attach provenance to artifacts.</span>
+            </div>
+            <div class="pipeline-step">
+              <strong>Registry + policy</strong>
+              <span>Harbor or Zot hold images while policy, registry governance, and secrets shape what ships.</span>
+            </div>
+            <div class="pipeline-step">
+              <strong>Promote + deploy</strong>
+              <span>ArgoCD, Helm, Kustomize, Terraform, and RBAC drive repeatable promotions across clusters.</span>
+            </div>
+            <div class="pipeline-step">
+              <strong>Runtime + feedback</strong>
+              <span>Edge devices, on-prem clusters, observability, and operators feed reality back into the system.</span>
+            </div>
+          </div>
+
+          <div class="priority-grid">
+            <div class="priority-card">
+              <h3>Design priorities</h3>
+              <div class="priority-rows">
+                <div class="priority-row">
+                  <span>Reproducibility</span>
+                  <div class="priority-track" style="--score:0.96;"></div>
+                  <strong>96</strong>
+                </div>
+                <div class="priority-row">
+                  <span>Hardening</span>
+                  <div class="priority-track" style="--score:0.93;"></div>
+                  <strong>93</strong>
+                </div>
+                <div class="priority-row">
+                  <span>Portability</span>
+                  <div class="priority-track" style="--score:0.9;"></div>
+                  <strong>90</strong>
+                </div>
+                <div class="priority-row">
+                  <span>Operability</span>
+                  <div class="priority-track" style="--score:0.88;"></div>
+                  <strong>88</strong>
+                </div>
+                <div class="priority-row">
+                  <span>Developer UX</span>
+                  <div class="priority-track" style="--score:0.83;"></div>
+                  <strong>83</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="priority-card">
+              <h3>Signal stats</h3>
+              <div class="stat-grid">
+                <div class="stat-box">
+                  <strong><span data-counter="3">3</span></strong>
+                  <span>Core deployment realities: cloud, on-prem, and edge.</span>
+                </div>
+                <div class="stat-box">
+                  <strong><span data-counter="2">2</span></strong>
+                  <span>Systems languages carried deeply: Go and Rust.</span>
+                </div>
+                <div class="stat-box">
+                  <strong><span class="count-inline"><span data-counter="4">4</span><span>+</span></span></strong>
+                  <span>Primary delivery levers: Terraform, Helm, Kustomize, ArgoCD.</span>
+                </div>
+                <div class="stat-box">
+                  <strong><span class="count-inline"><span data-counter="8">8</span><span>+</span></span></strong>
+                  <span>Major stack domains covered across product and infrastructure.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="surface" data-scene="build">
+        <div class="section-head">
+          <span class="eyebrow">Technology Stack</span>
+          <h2>Technology surface across orchestration, security, delivery, and product systems.</h2>
+          <p>
+            The stack is organized by operating domain rather than keyword list, so the platform reads as a connected
+            system instead of disconnected tools.
+          </p>
+        </div>
+
+        <div class="tech-grid">
+          <section class="tech-group" style="--group-color:#78f2c8;">
+            <strong>Orchestration</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="orchestrate">Kubernetes</button>
+              <button type="button" data-scene="orchestrate">K3s</button>
+              <button type="button" data-scene="orchestrate">OpenShift</button>
+              <button type="button" data-scene="orchestrate">ArgoCD</button>
+              <button type="button" data-scene="orchestrate">GitOps</button>
+              <button type="button" data-scene="orchestrate">Multi-cluster</button>
+              <button type="button" data-scene="orchestrate">RBAC</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#ffd479;">
+            <strong>Security</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="security">SELinux</button>
+              <button type="button" data-scene="security">Registry Management</button>
+              <button type="button" data-scene="security">SAST</button>
+              <button type="button" data-scene="security">DAST</button>
+              <button type="button" data-scene="security">Scanning</button>
+              <button type="button" data-scene="security">Secrets</button>
+              <button type="button" data-scene="security">Least Privilege</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#ee0000;">
+            <strong>Delivery + IaC</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="delivery">Terraform</button>
+              <button type="button" data-scene="delivery">Helm</button>
+              <button type="button" data-scene="delivery">Kustomize</button>
+              <button type="button" data-scene="delivery">Jenkins</button>
+              <button type="button" data-scene="delivery">Docker</button>
+              <button type="button" data-scene="delivery">Podman</button>
+              <button type="button" data-scene="delivery">Gitea</button>
+              <button type="button" data-scene="delivery">Harbor / Zot</button>
+              <button type="button" data-scene="delivery">Keycloak</button>
+              <button type="button" data-scene="delivery">GitHub / GitLab</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#65d8ff;">
+            <strong>Edge + AI</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="edge">Jetson</button>
+              <button type="button" data-scene="edge">Blackwell</button>
+              <button type="button" data-scene="edge">arm64</button>
+              <button type="button" data-scene="edge">On-prem</button>
+              <button type="button" data-scene="edge">Air-gapped</button>
+              <button type="button" data-scene="edge">Model Serving</button>
+              <button type="button" data-scene="edge">MLOps</button>
+              <button type="button" data-scene="edge">Agentic Workflows</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#b9c4ff;">
+            <strong>Languages</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="build">Go</button>
+              <button type="button" data-scene="build">Rust</button>
+              <button type="button" data-scene="build">JavaScript</button>
+              <button type="button" data-scene="build">TypeScript</button>
+              <button type="button" data-scene="build">C</button>
+              <button type="button" data-scene="build">Node.js</button>
+              <button type="button" data-scene="build">Actix</button>
+              <button type="button" data-scene="build">Chi</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#b9c4ff;">
+            <strong>Frontend</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="build">Vue 3</button>
+              <button type="button" data-scene="build">Nuxt 4</button>
+              <button type="button" data-scene="build">HTMX</button>
+              <button type="button" data-scene="build">Alpine.js</button>
+              <button type="button" data-scene="build">Tailwind CSS</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#78f2c8;">
+            <strong>Cloud + Ops</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="delivery">AWS</button>
+              <button type="button" data-scene="delivery">EKS</button>
+              <button type="button" data-scene="delivery">ECS</button>
+              <button type="button" data-scene="delivery">S3</button>
+              <button type="button" data-scene="delivery">IAM</button>
+              <button type="button" data-scene="delivery">Git</button>
+              <button type="button" data-scene="delivery">Runbooks</button>
+              <button type="button" data-scene="delivery">ADRs</button>
+            </div>
+          </section>
+
+          <section class="tech-group" style="--group-color:#ffd479;">
+            <strong>Data</strong>
+            <div class="tag-cloud">
+              <button type="button" data-scene="build">Postgres</button>
+              <button type="button" data-scene="build">Migrations</button>
+              <button type="button" data-scene="build">Tuning</button>
+              <button type="button" data-scene="build">Observability</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="section" id="sectors" data-scene="edge">
+        <div class="section-head">
+          <span class="eyebrow">Operating Contexts</span>
+          <h2>Built for defense, public-sector, and enterprise operating environments.</h2>
+          <p>
+            The engineering model is tuned for environments where reliability, compliance, constrained infrastructure,
+            and cross-team clarity are all first-order concerns.
+          </p>
+        </div>
+
+        <div class="sector-grid">
+          <article class="sector-card" style="--sector-color:#65d8ff;">
+            <strong>Defense + Field Ops</strong>
+            <h3>Air-gapped migration and edge platform work.</h3>
+            <p>
+              Platform transformation from legacy orchestration toward K3s-based Kubernetes, hardened registries,
+              identity services, and GitOps delivery across constrained field environments.
+            </p>
+            <div class="tag-row">
+              <span>K3s</span>
+              <span>Harbor / Zot</span>
+              <span>Keycloak</span>
+              <span>Jetson</span>
+            </div>
+          </article>
+
+          <article class="sector-card" style="--sector-color:#ffd479;">
+            <strong>Public Sector</strong>
+            <h3>Compliance-heavy clusters with strict operational controls.</h3>
+            <p>
+              OpenShift and Kubernetes delivery under tighter governance, with ArgoCD, secure Jenkins pipelines, RBAC,
+              policy enforcement, and documentation that supports auditability.
+            </p>
+            <div class="tag-row">
+              <span>OpenShift</span>
+              <span>RBAC</span>
+              <span>SBOM</span>
+              <span>Terraform</span>
+            </div>
+          </article>
+
+          <article class="sector-card" style="--sector-color:#ee0000;">
+            <strong>Enterprise + Product Teams</strong>
+            <h3>Cloud automation plus application delivery.</h3>
+            <p>
+              AWS-backed deployments, web platforms, frontend systems, browser-based product work, CI/CD upgrades, and
+              reliability improvements that connect infrastructure to delivery outcomes.
+            </p>
+            <div class="tag-row">
+              <span>AWS</span>
+              <span>Nuxt</span>
+              <span>Vue</span>
+              <span>Postgres</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section closing" data-scene="overview">
+        <div class="closing-panel">
+          <div class="closing-copy">
+            <span class="eyebrow">Platform Summary</span>
+            <h2>Mission-grade platform engineering for secure distributed systems.</h2>
+            <p>
+              Kubernetes, GitOps, supply-chain controls, edge hardware enablement, and Go/Rust engineering combine
+              into one delivery model for high-trust environments.
+            </p>
+          </div>
+
+          <div class="signal-board" aria-hidden="true">
+            <div class="signal-line">
+              <span>Cluster State</span>
+              <div class="signal-wave" data-signal-min="0.76" data-signal-max="0.96" style="--signal:0.88; --signal-color:#65d8ff;"></div>
+              <strong class="signal-value">88%</strong>
+            </div>
+            <div class="signal-line">
+              <span>Policy Rails</span>
+              <div class="signal-wave" data-signal-min="0.68" data-signal-max="0.93" style="--signal:0.82; --signal-color:#ffd479;"></div>
+              <strong class="signal-value">82%</strong>
+            </div>
+            <div class="signal-line">
+              <span>Edge Runtime</span>
+              <div class="signal-wave" data-signal-min="0.62" data-signal-max="0.91" style="--signal:0.78; --signal-color:#65d8ff;"></div>
+              <strong class="signal-value">78%</strong>
+            </div>
+            <div class="signal-line">
+              <span>Build Surface</span>
+              <div class="signal-wave" data-signal-min="0.58" data-signal-max="0.86" style="--signal:0.74; --signal-color:#b9c4ff;"></div>
+              <strong class="signal-value">74%</strong>
+            </div>
+            <div class="signal-line">
+              <span>Promotions</span>
+              <div class="signal-wave" data-signal-min="0.72" data-signal-max="0.97" style="--signal:0.9; --signal-color:#ee0000;"></div>
+              <strong class="signal-value">90%</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="footer-note">&copy; <span id="footer-year">2026</span> Rootster • rootster.xyz</div>
+
+    <script>
+      (() => {
+        const sceneData = {
+          overview: {
+            code: "01 / Overview",
+            title: "Declarative control model",
+            copy: "Kubernetes, GitOps, and infrastructure as code create a repeatable operating model across regulated and constrained environments.",
+            tech: ["Kubernetes", "ArgoCD", "GitOps", "Terraform", "Helm", "Kustomize"],
+            color: "#ee0000",
+            spectrum: [0.45, 0.62, 0.73, 0.84, 0.92, 0.97, 0.9, 0.82, 0.74, 0.68, 0.56, 0.48],
+            stats: [
+              ["Operating mode", "Declarative state across platform and application layers."],
+              ["Delivery model", "Promotion through GitOps and controlled overlays."],
+              ["Runtime span", "Cloud, on-prem, and edge aligned behind one control model."],
+              ["System bias", "Reliability under operational pressure."]
+            ]
+          },
+          orchestrate: {
+            code: "02 / Orchestrate",
+            title: "Kubernetes across mixed environments",
+            copy: "K3s, upstream Kubernetes, and OpenShift are applied where the environment demands them. Multi-cluster control is treated as baseline operating practice.",
+            tech: ["K3s", "Kubernetes", "OpenShift", "Multi-Cluster", "ArgoCD", "RBAC"],
+            color: "#78f2c8",
+            spectrum: [0.28, 0.4, 0.54, 0.68, 0.82, 0.96, 0.9, 0.81, 0.64, 0.5, 0.36, 0.26],
+            stats: [
+              ["Control plane", "Kubernetes-first with environment-specific adaptation."],
+              ["Cluster posture", "Multi-environment, RBAC-aware, and policy-governed."],
+              ["Field fit", "Works in cloud, data-center, and edge footprints."],
+              ["Ops style", "Declarative, repeatable, and built to reduce manual drift."]
+            ]
+          },
+          security: {
+            code: "03 / Security",
+            title: "Security inside the delivery path",
+            copy: "SELinux, hardened registries, scanning, SBOM-aware pipelines, secrets handling, and least-privilege access control are embedded directly into the delivery path.",
+            tech: ["SELinux", "SBOM", "Scanning", "Least Privilege", "Secrets", "Registry Control"],
+            color: "#ffd479",
+            spectrum: [0.32, 0.48, 0.66, 0.88, 0.98, 0.92, 0.9, 0.86, 0.79, 0.63, 0.44, 0.31],
+            stats: [
+              ["Security rails", "Scanning, policy, identity, and hardening enforced in-path."],
+              ["Image flow", "Registry governance backed by provenance awareness."],
+              ["Access model", "Least privilege with explicit operational boundaries."],
+              ["Primary bias", "Reduce ambiguity before deployment reaches runtime."]
+            ]
+          },
+          delivery: {
+            code: "04 / Delivery",
+            title: "Pipelines tuned for traceability",
+            copy: "Jenkins, Git-based control, registry services, identity, Terraform, Helm, and Kustomize combine into delivery pipelines with traceable outcomes and low ambiguity.",
+            tech: ["Jenkins", "GitHub", "GitLab", "Gitea", "Harbor", "Zot", "Keycloak"],
+            color: "#ee0000",
+            spectrum: [0.38, 0.58, 0.78, 0.92, 0.97, 0.88, 0.8, 0.74, 0.63, 0.5, 0.42, 0.34],
+            stats: [
+              ["Pipeline shape", "Traceable artifact movement with fewer blind spots."],
+              ["Promotion path", "Versioned, reviewable, and registry-aware."],
+              ["Operational style", "Explained through code, policy, and reviewable history."],
+              ["Toolchain", "CI, identity, registry, and deploy layers in sync."]
+            ]
+          },
+          edge: {
+            code: "05 / Edge",
+            title: "Edge compute with multi-arch reality",
+            copy: "Jetson, Blackwell, x86, arm64, on-prem deployments, and constrained-network operations define a platform built for field conditions rather than ideal lab assumptions.",
+            tech: ["Jetson", "Blackwell", "arm64", "x86", "Air-Gapped", "On-Prem"],
+            color: "#65d8ff",
+            spectrum: [0.24, 0.3, 0.42, 0.58, 0.78, 0.96, 0.94, 0.82, 0.66, 0.5, 0.34, 0.22],
+            stats: [
+              ["Compute profile", "Mixed architecture and device-constrained targets."],
+              ["Network reality", "Air-gapped or tightly controlled environments."],
+              ["Platform need", "Portable artifacts with dependable rollback paths."],
+              ["Operational bias", "Field-ready and failure-aware."]
+            ]
+          },
+          build: {
+            code: "06 / Build",
+            title: "Application depth behind the platform",
+            copy: "Go, Rust, Node.js, Vue, Nuxt, HTMX, Alpine, and Postgres keep the infrastructure grounded in real services, internal tooling, and operator experience.",
+            tech: ["Go", "Rust", "Node.js", "Vue 3", "Nuxt 4", "Postgres"],
+            color: "#b9c4ff",
+            spectrum: [0.2, 0.32, 0.48, 0.66, 0.86, 0.96, 0.89, 0.76, 0.58, 0.42, 0.3, 0.18],
+            stats: [
+              ["Backend depth", "APIs, tooling, and service internals in Go and Rust."],
+              ["UI surface", "Vue, Nuxt, HTMX, and Alpine for usable tooling."],
+              ["Data layer", "Postgres migrations, tuning, and operational support."],
+              ["Platform effect", "Infrastructure choices stay product-aware."]
+            ]
+          }
+        };
+
+        const sceneTitle = document.getElementById("scene-title");
+        const sceneCopy = document.getElementById("scene-copy");
+        const sceneCode = document.getElementById("scene-code");
+        const sceneState = document.getElementById("scene-state");
+        const sceneSpectrum = document.getElementById("scene-spectrum");
+        const sceneTech = document.getElementById("scene-tech");
+        const sceneStats = document.getElementById("scene-stats");
+        const heroSceneTitle = document.getElementById("hero-scene-title");
+        const heroSceneCopy = document.getElementById("hero-scene-copy");
+        const systemCoreLabel = document.getElementById("system-core-label");
+        const systemCoreTitle = document.getElementById("system-core-title");
+        const systemCoreCopy = document.getElementById("system-core-copy");
+        const systemCoreTech = document.getElementById("system-core-tech");
+        const footerYear = document.getElementById("footer-year");
+        const closingSection = document.querySelector(".closing");
+        const signalWaves = Array.from(document.querySelectorAll(".signal-wave"));
+        const systemShell = document.querySelector(".system-shell");
+        const systemCore = document.querySelector(".system-core");
+        const orbitNodes = Array.from(document.querySelectorAll(".orbit-node"));
+        const storyCards = Array.from(document.querySelectorAll(".story-card"));
+        const stackSection = document.getElementById("stack");
+        const sceneSections = Array.from(
+          document.querySelectorAll(".section[data-scene]")
+        );
+        const hoverTriggers = Array.from(
+          document.querySelectorAll(".story-card, .cap-card, .tag-cloud button")
+        );
+
+        for (let index = 0; index < 12; index += 1) {
+          const bar = document.createElement("div");
+          bar.className = "scene-bar";
+          sceneSpectrum.appendChild(bar);
+        }
+
+        let activeScene = "overview";
+        let scrollScene = "overview";
+        let forcedScene = null;
+        let scrollTicking = false;
+
+        function getViewportFocusY() {
+          return window.innerHeight * 0.43;
+        }
+
+        function applyPreviewHighlight(sceneKey) {
+          if (!systemShell) {
+            return;
+          }
+
+          const data = sceneData[sceneKey] || sceneData.overview;
+          const highlightAll = sceneKey === "overview";
+          systemShell.style.setProperty("--preview-highlight", data.color);
+          systemShell.dataset.highlight = sceneKey;
+
+          orbitNodes.forEach((node) => {
+            const match = highlightAll || node.dataset.scene === sceneKey;
+            node.classList.toggle("is-highlighted", match);
+            node.classList.toggle("is-muted", !match);
+            node.setAttribute("aria-pressed", String(node.dataset.scene === sceneKey));
+          });
+
+          if (systemCore) {
+            systemCore.classList.add("is-highlighted");
+          }
+        }
+
+        function renderScene(sceneKey) {
+          const data = sceneData[sceneKey] || sceneData.overview;
+          activeScene = sceneKey;
+          document.documentElement.style.setProperty("--scene-color", data.color);
+
+          sceneTitle.textContent = data.title;
+          sceneCopy.textContent = data.copy;
+          sceneCode.textContent = data.code;
+          if (sceneState) {
+            sceneState.textContent = sceneKey === "overview" ? "Operational View" : "Focused Layer";
+          }
+
+          if (heroSceneTitle) {
+            heroSceneTitle.textContent =
+              sceneKey === "overview" ? "Secure control model for distributed systems." : data.title;
+          }
+
+          if (heroSceneCopy) {
+            heroSceneCopy.textContent =
+              sceneKey === "overview"
+                ? "Move through the architecture to inspect how orchestration, policy, delivery, compute, and application engineering reinforce one operating model."
+                : data.copy;
+          }
+
+          if (systemCoreLabel) {
+            systemCoreLabel.textContent = sceneKey === "overview" ? "Platform View" : data.code;
+          }
+
+          if (systemCoreTitle) {
+            systemCoreTitle.textContent = data.title;
+          }
+
+          if (systemCoreCopy) {
+            systemCoreCopy.textContent = data.copy;
+          }
+
+          if (systemCoreTech) {
+            systemCoreTech.replaceChildren(
+              ...data.tech.slice(0, 4).map((tech) => {
+                const chip = document.createElement("span");
+                chip.textContent = tech;
+                return chip;
+              })
+            );
+          }
+
+          Array.from(sceneSpectrum.children).forEach((bar, index) => {
+            bar.style.setProperty("--scene-color", data.color);
+            bar.style.setProperty("--level", data.spectrum[index] ?? 0.5);
+          });
+
+          sceneTech.replaceChildren(
+            ...data.tech.map((tech) => {
+              const chip = document.createElement("span");
+              chip.textContent = tech;
+              return chip;
+            })
+          );
+
+          sceneStats.replaceChildren(
+            ...data.stats.map(([label, value]) => {
+              const card = document.createElement("div");
+              card.className = "visual-stat";
+              const title = document.createElement("strong");
+              title.textContent = label;
+              const text = document.createElement("span");
+              text.textContent = value;
+              card.append(title, text);
+              return card;
+            })
+          );
+
+          storyCards.forEach((card) => {
+            card.classList.toggle("active", card.dataset.scene === sceneKey);
+            card.style.setProperty("--card-color", card.dataset.color || data.color);
+          });
+
+          applyPreviewHighlight(sceneKey);
+        }
+
+        renderScene(activeScene);
+
+        if (footerYear) {
+          footerYear.textContent = String(new Date().getFullYear());
+        }
+
+        function updateStorySceneFromScroll() {
+          if (!stackSection) {
+            return false;
+          }
+
+          const focusY = getViewportFocusY();
+          const stackRect = stackSection.getBoundingClientRect();
+          if (stackRect.top > focusY || stackRect.bottom < focusY) {
+            return false;
+          }
+
+          let activeCard = storyCards.find((card) => {
+            const rect = card.getBoundingClientRect();
+            return rect.top <= focusY && rect.bottom >= focusY;
+          });
+
+          if (!activeCard) {
+            activeCard = storyCards
+              .slice()
+              .sort((left, right) => {
+                const leftRect = left.getBoundingClientRect();
+                const rightRect = right.getBoundingClientRect();
+                const leftDistance = Math.abs(leftRect.top + leftRect.height * 0.5 - focusY);
+                const rightDistance = Math.abs(rightRect.top + rightRect.height * 0.5 - focusY);
+                return leftDistance - rightDistance;
+              })[0];
+          }
+
+          const sceneKey = activeCard?.dataset.scene;
+          if (!sceneKey || !sceneData[sceneKey]) {
+            return false;
+          }
+
+          scrollScene = sceneKey;
+          if (sceneKey !== activeScene) {
+            renderScene(sceneKey);
+          }
+          return true;
+        }
+
+        const sectionObserver = new IntersectionObserver(
+          (entries) => {
+            if (forcedScene) {
+              return;
+            }
+
+            if (updateStorySceneFromScroll()) {
+              return;
+            }
+
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => {
+                const focusY = getViewportFocusY();
+                const aRect = a.target.getBoundingClientRect();
+                const bRect = b.target.getBoundingClientRect();
+                const aDistance = Math.abs(aRect.top + aRect.height * 0.5 - focusY);
+                const bDistance = Math.abs(bRect.top + bRect.height * 0.5 - focusY);
+                return aDistance - bDistance;
+              });
+
+            if (!visible.length) {
+              return;
+            }
+
+            const sceneKey = visible[0].target.dataset.scene;
+            if (sceneKey && sceneData[sceneKey]) {
+              scrollScene = sceneKey;
+            }
+
+            if (sceneKey && sceneKey !== activeScene) {
+              renderScene(sceneKey);
+            }
+          },
+          {
+            threshold: [0.2, 0.4, 0.6],
+            rootMargin: "-12% 0px -20% 0px"
+          }
+        );
+
+        sceneSections.forEach((trigger) => sectionObserver.observe(trigger));
+
+        hoverTriggers.forEach((trigger) => {
+          trigger.addEventListener("mouseenter", () => {
+            const sceneKey = trigger.dataset.scene;
+            if (!sceneKey || !sceneData[sceneKey]) {
+              return;
+            }
+
+            forcedScene = sceneKey;
+            renderScene(sceneKey);
+          });
+
+          trigger.addEventListener("mouseleave", () => {
+            forcedScene = null;
+            renderScene(scrollScene);
+          });
+
+          trigger.addEventListener("focus", () => {
+            const sceneKey = trigger.dataset.scene;
+            if (!sceneKey || !sceneData[sceneKey]) {
+              return;
+            }
+
+            forcedScene = sceneKey;
+            renderScene(sceneKey);
+          });
+
+          trigger.addEventListener("click", () => {
+            const sceneKey = trigger.dataset.scene;
+            if (!sceneKey || !sceneData[sceneKey]) {
+              return;
+            }
+
+            scrollScene = sceneKey;
+            renderScene(sceneKey);
+          });
+
+          trigger.addEventListener("blur", () => {
+            forcedScene = null;
+            renderScene(scrollScene);
+          });
+        });
+
+        orbitNodes.forEach((trigger) => {
+          trigger.addEventListener("click", () => {
+            const sceneKey = trigger.dataset.scene;
+            if (!sceneKey || !sceneData[sceneKey]) {
+              return;
+            }
+
+            forcedScene = null;
+            scrollScene = sceneKey;
+            renderScene(sceneKey);
+          });
+        });
+
+        function queueScrollSceneUpdate() {
+          if (forcedScene || scrollTicking) {
+            return;
+          }
+
+          scrollTicking = true;
+          requestAnimationFrame(() => {
+            scrollTicking = false;
+            if (updateStorySceneFromScroll()) {
+              return;
+            }
+
+            const focusY = getViewportFocusY();
+            const candidate = sceneSections
+              .filter((section) => {
+                const rect = section.getBoundingClientRect();
+                return rect.bottom > 0 && rect.top < window.innerHeight;
+              })
+              .sort((left, right) => {
+                const leftRect = left.getBoundingClientRect();
+                const rightRect = right.getBoundingClientRect();
+                const leftDistance = Math.abs(leftRect.top + leftRect.height * 0.5 - focusY);
+                const rightDistance = Math.abs(rightRect.top + rightRect.height * 0.5 - focusY);
+                return leftDistance - rightDistance;
+              })[0];
+
+            const sceneKey = candidate?.dataset.scene;
+            if (sceneKey && sceneKey !== activeScene && sceneData[sceneKey]) {
+              scrollScene = sceneKey;
+              renderScene(sceneKey);
+            }
+          });
+        }
+
+        const counters = Array.from(document.querySelectorAll("[data-counter]"));
+        const counterObserver = new IntersectionObserver(
+          (entries, currentObserver) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+
+              const target = Number(entry.target.dataset.counter);
+              const duration = 1000;
+              const startTime = performance.now();
+
+              function step(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                entry.target.textContent = String(Math.round(target * eased));
+                if (progress < 1) {
+                  requestAnimationFrame(step);
+                } else {
+                  entry.target.textContent = String(target);
+                }
+              }
+
+              requestAnimationFrame(step);
+              currentObserver.unobserve(entry.target);
+            });
+          },
+          { threshold: 0.6 }
+        );
+
+        counters.forEach((counter) => counterObserver.observe(counter));
+
+        function setSignalValue(wave, rawValue) {
+          const value = Math.min(0.99, Math.max(0.35, rawValue));
+          wave.style.setProperty("--signal", value.toFixed(2));
+          const label = wave.parentElement?.querySelector(".signal-value");
+          if (label) {
+            label.textContent = `${Math.round(value * 100)}%`;
+          }
+        }
+
+        function randomizeSignals() {
+          signalWaves.forEach((wave) => {
+            const min = Number.parseFloat(wave.dataset.signalMin || "0.55");
+            const max = Number.parseFloat(wave.dataset.signalMax || "0.92");
+            const next = min + Math.random() * (max - min);
+            setSignalValue(wave, next);
+          });
+        }
+
+        let signalTimer = null;
+
+        if (closingSection) {
+          const summaryObserver = new IntersectionObserver(
+            (entries) => {
+              const visible = entries.some((entry) => entry.isIntersecting);
+
+              if (!visible) {
+                if (signalTimer) {
+                  clearInterval(signalTimer);
+                  signalTimer = null;
+                }
+                return;
+              }
+
+              randomizeSignals();
+
+              if (!prefersReducedMotion && !signalTimer) {
+                signalTimer = window.setInterval(randomizeSignals, 2600);
+              }
+            },
+            { threshold: 0.42 }
+          );
+
+          summaryObserver.observe(closingSection);
+        }
+
+        const canvas = document.getElementById("system-canvas");
+        const ctx = canvas.getContext("2d");
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const pointer = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let animationFrame = null;
+        let tick = 0;
+
+        const nodeOrder = [
+          "Git",
+          "Jenkins",
+          "Registry",
+          "Policy",
+          "ArgoCD",
+          "Kubernetes",
+          "Edge",
+          "Telemetry",
+          "Go",
+          "Rust",
+          "Vue",
+          "Postgres"
+        ];
+
+        const sceneLayouts = {
+          overview: {
+            edges: [
+              ["Git", "Jenkins"],
+              ["Jenkins", "Registry"],
+              ["Registry", "Policy"],
+              ["Policy", "ArgoCD"],
+              ["ArgoCD", "Kubernetes"],
+              ["Kubernetes", "Edge"],
+              ["Kubernetes", "Telemetry"],
+              ["Go", "Kubernetes"],
+              ["Rust", "Kubernetes"],
+              ["Vue", "Git"],
+              ["Postgres", "Go"]
+            ],
+            positions: {
+              Git: [0.19, 0.36, 5],
+              Jenkins: [0.31, 0.28, 6],
+              Registry: [0.45, 0.24, 7],
+              Policy: [0.58, 0.29, 6],
+              ArgoCD: [0.72, 0.38, 7],
+              Kubernetes: [0.54, 0.55, 10],
+              Edge: [0.78, 0.67, 6],
+              Telemetry: [0.62, 0.8, 5],
+              Go: [0.33, 0.72, 5],
+              Rust: [0.47, 0.81, 5],
+              Vue: [0.14, 0.69, 4],
+              Postgres: [0.25, 0.86, 4]
+            }
+          },
+          orchestrate: {
+            edges: [
+              ["Git", "ArgoCD"],
+              ["ArgoCD", "Kubernetes"],
+              ["Kubernetes", "Edge"],
+              ["Kubernetes", "Telemetry"],
+              ["Kubernetes", "Policy"],
+              ["Kubernetes", "Go"],
+              ["Kubernetes", "Rust"]
+            ],
+            positions: {
+              Git: [0.2, 0.4, 4],
+              Jenkins: [0.18, 0.18, 2],
+              Registry: [0.33, 0.2, 3],
+              Policy: [0.67, 0.28, 5],
+              ArgoCD: [0.47, 0.22, 8],
+              Kubernetes: [0.5, 0.52, 12],
+              Edge: [0.78, 0.56, 6],
+              Telemetry: [0.62, 0.77, 5],
+              Go: [0.31, 0.74, 4],
+              Rust: [0.46, 0.84, 4],
+              Vue: [0.12, 0.72, 2],
+              Postgres: [0.22, 0.84, 2]
+            }
+          },
+          security: {
+            edges: [
+              ["Git", "Policy"],
+              ["Jenkins", "Policy"],
+              ["Registry", "Policy"],
+              ["Policy", "Kubernetes"],
+              ["Policy", "Edge"],
+              ["Policy", "Telemetry"]
+            ],
+            positions: {
+              Git: [0.17, 0.24, 3],
+              Jenkins: [0.26, 0.44, 4],
+              Registry: [0.31, 0.66, 5],
+              Policy: [0.54, 0.46, 12],
+              ArgoCD: [0.76, 0.34, 3],
+              Kubernetes: [0.78, 0.56, 6],
+              Edge: [0.72, 0.8, 4],
+              Telemetry: [0.5, 0.84, 4],
+              Go: [0.21, 0.82, 2],
+              Rust: [0.1, 0.62, 2],
+              Vue: [0.08, 0.42, 2],
+              Postgres: [0.12, 0.16, 2]
+            }
+          },
+          delivery: {
+            edges: [
+              ["Git", "Jenkins"],
+              ["Jenkins", "Registry"],
+              ["Registry", "ArgoCD"],
+              ["ArgoCD", "Kubernetes"],
+              ["Kubernetes", "Telemetry"],
+              ["Policy", "ArgoCD"],
+              ["Policy", "Registry"]
+            ],
+            positions: {
+              Git: [0.12, 0.48, 6],
+              Jenkins: [0.28, 0.34, 8],
+              Registry: [0.46, 0.28, 8],
+              Policy: [0.45, 0.54, 6],
+              ArgoCD: [0.64, 0.38, 8],
+              Kubernetes: [0.8, 0.45, 8],
+              Edge: [0.84, 0.7, 4],
+              Telemetry: [0.66, 0.76, 5],
+              Go: [0.22, 0.78, 3],
+              Rust: [0.38, 0.84, 3],
+              Vue: [0.08, 0.72, 2],
+              Postgres: [0.53, 0.88, 2]
+            }
+          },
+          edge: {
+            edges: [
+              ["Git", "Jenkins"],
+              ["Jenkins", "Registry"],
+              ["Registry", "Kubernetes"],
+              ["Kubernetes", "Edge"],
+              ["Kubernetes", "Telemetry"],
+              ["Go", "Edge"],
+              ["Rust", "Edge"]
+            ],
+            positions: {
+              Git: [0.18, 0.22, 3],
+              Jenkins: [0.28, 0.34, 5],
+              Registry: [0.41, 0.42, 6],
+              Policy: [0.55, 0.25, 4],
+              ArgoCD: [0.58, 0.52, 4],
+              Kubernetes: [0.56, 0.68, 8],
+              Edge: [0.8, 0.58, 12],
+              Telemetry: [0.72, 0.82, 5],
+              Go: [0.28, 0.7, 4],
+              Rust: [0.4, 0.82, 4],
+              Vue: [0.12, 0.56, 2],
+              Postgres: [0.15, 0.84, 2]
+            }
+          },
+          build: {
+            edges: [
+              ["Vue", "Git"],
+              ["Git", "Go"],
+              ["Git", "Rust"],
+              ["Go", "Postgres"],
+              ["Rust", "Kubernetes"],
+              ["Go", "Kubernetes"],
+              ["Vue", "Postgres"]
+            ],
+            positions: {
+              Git: [0.22, 0.3, 5],
+              Jenkins: [0.14, 0.14, 2],
+              Registry: [0.38, 0.18, 2],
+              Policy: [0.66, 0.22, 2],
+              ArgoCD: [0.78, 0.36, 3],
+              Kubernetes: [0.68, 0.58, 6],
+              Edge: [0.84, 0.74, 2],
+              Telemetry: [0.59, 0.84, 2],
+              Go: [0.38, 0.48, 9],
+              Rust: [0.55, 0.4, 8],
+              Vue: [0.18, 0.68, 8],
+              Postgres: [0.41, 0.82, 6]
+            }
+          }
+        };
+
+        const nodes = nodeOrder.map((name, index) => ({
+          name,
+          x: 0,
+          y: 0,
+          tx: 0,
+          ty: 0,
+          base: 4,
+          radius: 4,
+          wobble: index * 0.7
+        }));
+
+        function drawRoundedRect(x, y, rectWidth, rectHeight, radius) {
+          const r = Math.min(radius, rectWidth * 0.5, rectHeight * 0.5);
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + rectWidth - r, y);
+          ctx.quadraticCurveTo(x + rectWidth, y, x + rectWidth, y + r);
+          ctx.lineTo(x + rectWidth, y + rectHeight - r);
+          ctx.quadraticCurveTo(x + rectWidth, y + rectHeight, x + rectWidth - r, y + rectHeight);
+          ctx.lineTo(x + r, y + rectHeight);
+          ctx.quadraticCurveTo(x, y + rectHeight, x, y + rectHeight - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+        }
+
+        function drawNodeLabel(node) {
+          const isCompact = width <= 760;
+          const label = node.name.toUpperCase();
+          const fontSize = isCompact ? 10 : 12;
+          const paddingX = isCompact ? 6 : 8;
+          const paddingY = isCompact ? 4 : 5;
+          ctx.font = `${fontSize}px "IBM Plex Mono"`;
+          const metrics = ctx.measureText(label);
+          const labelWidth = metrics.width + paddingX * 2;
+          const labelHeight = fontSize + paddingY * 2;
+          const originX = node.drawX + 10;
+          const originY = isCompact ? node.drawY + 14 : node.drawY - labelHeight - 10;
+          const clampedX = Math.min(Math.max(originX, 8), width - labelWidth - 8);
+          const clampedY = Math.min(Math.max(originY, 8), height - labelHeight - 8);
+
+          drawRoundedRect(clampedX, clampedY, labelWidth, labelHeight, 999);
+          ctx.fillStyle = "rgba(16, 10, 12, 0.72)";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(245, 239, 237, 0.78)";
+          ctx.textBaseline = "top";
+          ctx.fillText(label, clampedX + paddingX, clampedY + paddingY);
+        }
+
+        function resizeCanvas() {
+          dpr = window.devicePixelRatio || 1;
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = width + "px";
+          canvas.style.height = height + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function updateNodeTargets() {
+          const layout = sceneLayouts[activeScene] || sceneLayouts.overview;
+          const color = sceneData[activeScene]?.color || "#ee0000";
+          const mouseShiftX = (pointer.x / Math.max(width, 1) - 0.5) * 40;
+          const mouseShiftY = (pointer.y / Math.max(height, 1) - 0.5) * 30;
+
+          nodes.forEach((node) => {
+            const [px, py, size] = layout.positions[node.name] || [0.5, 0.5, 2];
+            node.tx = px * width + mouseShiftX * (0.15 + size * 0.015);
+            node.ty = py * height + mouseShiftY * (0.15 + size * 0.015);
+            node.base = size;
+            node.color = color;
+          });
+
+          return layout.edges;
+        }
+
+        function drawBackground() {
+          const color = sceneData[activeScene]?.color || "#ee0000";
+          const edges = updateNodeTargets();
+          ctx.clearRect(0, 0, width, height);
+
+          const gradient = ctx.createRadialGradient(
+            width * 0.5,
+            height * 0.35,
+            0,
+            width * 0.5,
+            height * 0.45,
+            Math.max(width, height) * 0.56
+          );
+          gradient.addColorStop(0, "rgba(255,255,255,0.02)");
+          gradient.addColorStop(0.35, "rgba(255,255,255,0.01)");
+          gradient.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, width, height);
+
+          for (let index = 0; index < 40; index += 1) {
+            const x = ((index * 137.5) % width) + Math.sin(tick * 0.001 + index) * 22;
+            const y = ((index * 79.2) % height) + Math.cos(tick * 0.0012 + index) * 18;
+            ctx.fillStyle = "rgba(255,255,255,0.03)";
+            ctx.fillRect(x, y, 1.2, 1.2);
+          }
+
+          nodes.forEach((node) => {
+            const driftX = prefersReducedMotion ? 0 : Math.sin(tick * 0.0012 + node.wobble) * 2.6;
+            const driftY = prefersReducedMotion ? 0 : Math.cos(tick * 0.0014 + node.wobble) * 2.2;
+            node.x += (node.tx - node.x) * 0.07;
+            node.y += (node.ty - node.y) * 0.07;
+            node.radius = node.base + Math.sin(tick * 0.0016 + node.wobble) * 0.45;
+            node.drawX = node.x + driftX;
+            node.drawY = node.y + driftY;
+          });
+
+          ctx.lineWidth = 1;
+          edges.forEach(([fromName, toName], edgeIndex) => {
+            const from = nodes.find((node) => node.name === fromName);
+            const to = nodes.find((node) => node.name === toName);
+            if (!from || !to) {
+              return;
+            }
+
+            ctx.strokeStyle = "rgba(255,255,255,0.09)";
+            ctx.beginPath();
+            ctx.moveTo(from.drawX, from.drawY);
+            const cx = (from.drawX + to.drawX) * 0.5;
+            const cy = Math.min(from.drawY, to.drawY) - 30 + edgeIndex * 1.5;
+            ctx.quadraticCurveTo(cx, cy, to.drawX, to.drawY);
+            ctx.stroke();
+
+            const pulse = ((tick * 0.0015 + edgeIndex * 0.13) % 1);
+            const pulseX = from.drawX + (to.drawX - from.drawX) * pulse;
+            const pulseY =
+              from.drawY +
+              (to.drawY - from.drawY) * pulse -
+              Math.sin(pulse * Math.PI) * (18 + edgeIndex * 0.2);
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = color;
+            ctx.arc(pulseX, pulseY, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          });
+
+          nodes.forEach((node) => {
+            const outer = ctx.createRadialGradient(node.drawX, node.drawY, 0, node.drawX, node.drawY, 28);
+            outer.addColorStop(0, color + "55");
+            outer.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.fillStyle = outer;
+            ctx.beginPath();
+            ctx.arc(node.drawX, node.drawY, 14 + node.radius * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "rgba(255,255,255,0.82)";
+            ctx.beginPath();
+            ctx.arc(node.drawX, node.drawY, Math.max(2.6, node.radius), 0, Math.PI * 2);
+            ctx.fill();
+
+            const labelThreshold = width <= 760 ? 4 : 8;
+            if (node.base >= labelThreshold) {
+              drawNodeLabel(node);
+            }
+          });
+
+          tick += prefersReducedMotion ? 0.3 : 1;
+          animationFrame = requestAnimationFrame(drawBackground);
+        }
+
+        resizeCanvas();
+        nodes.forEach((node) => {
+          node.x = width * 0.5;
+          node.y = height * 0.5;
+        });
+        drawBackground();
+
+        window.addEventListener("resize", () => {
+          resizeCanvas();
+          queueScrollSceneUpdate();
+        });
+        window.addEventListener("scroll", queueScrollSceneUpdate, { passive: true });
+        window.addEventListener("mousemove", (event) => {
+          pointer.x = event.clientX;
+          pointer.y = event.clientY;
+        });
+        window.addEventListener("touchmove", (event) => {
+          const touch = event.touches[0];
+          if (!touch) {
+            return;
+          }
+
+          pointer.x = touch.clientX;
+          pointer.y = touch.clientY;
+        });
+
+        window.addEventListener("beforeunload", () => {
+          if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+          }
+
+          if (signalTimer) {
+            clearInterval(signalTimer);
+          }
+        });
+
+        window.setTimeout(queueScrollSceneUpdate, 220);
+      })();
+    </script>
+  </body>
+</html>
