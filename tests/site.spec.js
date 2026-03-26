@@ -98,6 +98,17 @@ test("story cards and stack controls drive the live topology highlight", async (
   await expect(page.locator(".system-shell")).toHaveAttribute("data-highlight", "edge");
   await expect(page.locator(".orbit-node.is-highlighted")).toHaveCount(1);
 
+  await headerLink(page, "Stack").click();
+  await page.locator(".tech-group").filter({ hasText: "Languages" }).hover();
+  await expect(page.locator(".system-shell")).toHaveAttribute("data-highlight", "build");
+  await expect(page.locator("#system-canvas")).toHaveAttribute("data-focus", "Go,Rust");
+
+  await page.locator(".tech-group").filter({ hasText: "Frontend" }).hover();
+  await expect(page.locator("#system-canvas")).toHaveAttribute("data-focus", "Vue");
+
+  await page.locator(".tech-group").filter({ hasText: "Data" }).hover();
+  await expect(page.locator("#system-canvas")).toHaveAttribute("data-focus", "Postgres");
+
   await page.getByRole("button", { name: "Embedded hardening path" }).click();
   await expect(page.locator(".system-shell")).toHaveAttribute("data-highlight", "security");
 });

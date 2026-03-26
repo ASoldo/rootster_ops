@@ -488,6 +488,11 @@
         filter: saturate(112%);
       }
 
+      .system-shell.is-interacting .orbit-node.is-highlighted {
+        box-shadow: 0 0 28px color-mix(in srgb, var(--preview-highlight, var(--accent)) 34%, transparent);
+        transform: translateY(-1px);
+      }
+
       .orbit-label {
         font-size: 0.82rem;
         line-height: 1.2;
@@ -1081,6 +1086,23 @@
           linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
           rgba(27, 17, 20, 0.84);
         backdrop-filter: blur(18px);
+        cursor: pointer;
+        transition:
+          border-color 180ms ease,
+          background 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .tech-group:hover,
+      .tech-group:focus-within,
+      .tech-group.is-active {
+        border-color: color-mix(in srgb, var(--group-color, var(--accent)) 45%, rgba(255, 255, 255, 0.16));
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+          color-mix(in srgb, var(--group-color, var(--accent)) 8%, rgba(27, 17, 20, 0.88));
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+        transform: translateY(-2px);
       }
 
       .tech-group strong {
@@ -1993,7 +2015,7 @@
         </div>
 
         <div class="tech-grid">
-          <section class="tech-group" style="--group-color:#78f2c8;">
+          <section class="tech-group" data-scene="orchestrate" data-focus="Kubernetes,ArgoCD" style="--group-color:#78f2c8;">
             <strong>Orchestration</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="orchestrate">Kubernetes</button>
@@ -2006,7 +2028,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#ffd479;">
+          <section class="tech-group" data-scene="security" data-focus="Policy,Registry" style="--group-color:#ffd479;">
             <strong>Security</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="security">SELinux</button>
@@ -2019,7 +2041,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#ee0000;">
+          <section class="tech-group" data-scene="delivery" data-focus="Git,Jenkins,Registry,ArgoCD" style="--group-color:#ee0000;">
             <strong>Delivery + IaC</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="delivery">Terraform</button>
@@ -2035,7 +2057,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#65d8ff;">
+          <section class="tech-group" data-scene="edge" data-focus="Edge,Telemetry" style="--group-color:#65d8ff;">
             <strong>Edge + AI</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="edge">Jetson</button>
@@ -2049,7 +2071,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#b9c4ff;">
+          <section class="tech-group" data-scene="build" data-focus="Go,Rust" style="--group-color:#b9c4ff;">
             <strong>Languages</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="build">Go</button>
@@ -2063,7 +2085,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#b9c4ff;">
+          <section class="tech-group" data-scene="build" data-focus="Vue" style="--group-color:#b9c4ff;">
             <strong>Frontend</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="build">Vue 3</button>
@@ -2074,7 +2096,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#78f2c8;">
+          <section class="tech-group" data-scene="delivery" data-focus="Git,Jenkins,Telemetry" style="--group-color:#78f2c8;">
             <strong>Cloud + Ops</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="delivery">AWS</button>
@@ -2088,7 +2110,7 @@
             </div>
           </section>
 
-          <section class="tech-group" style="--group-color:#ffd479;">
+          <section class="tech-group" data-scene="build" data-focus="Postgres" style="--group-color:#ffd479;">
             <strong>Data</strong>
             <div class="tag-cloud">
               <button type="button" data-scene="build">Postgres</button>
@@ -2309,14 +2331,18 @@
         const signalWaves = Array.from(document.querySelectorAll(".signal-wave"));
         const systemShell = document.querySelector(".system-shell");
         const systemCore = document.querySelector(".system-core");
+        const canvas = document.getElementById("system-canvas");
+        const ctx = canvas.getContext("2d");
         const orbitNodes = Array.from(document.querySelectorAll(".orbit-node"));
         const storyCards = Array.from(document.querySelectorAll(".story-card"));
+        const techGroups = Array.from(document.querySelectorAll(".tech-group[data-scene]"));
         const stackSection = document.getElementById("stack");
         const sceneSections = Array.from(
           document.querySelectorAll(".section[data-scene]")
         );
+        const interactiveSelector = ".story-card, .cap-card, .tech-group[data-scene], .tag-cloud button";
         const hoverTriggers = Array.from(
-          document.querySelectorAll(".story-card, .cap-card, .tag-cloud button")
+          document.querySelectorAll(interactiveSelector)
         );
 
         for (let index = 0; index < 12; index += 1) {
@@ -2328,7 +2354,62 @@
         let activeScene = "overview";
         let scrollScene = "overview";
         let forcedScene = null;
+        let forcedFocusNodes = null;
         let scrollTicking = false;
+        let interactionResetTimer = null;
+
+        const sceneFocusMap = {
+          overview: ["Git", "Jenkins", "Registry", "Policy", "ArgoCD", "Kubernetes", "Edge", "Telemetry", "Go", "Rust", "Vue", "Postgres"],
+          orchestrate: ["Kubernetes", "ArgoCD"],
+          security: ["Policy", "Registry"],
+          delivery: ["Git", "Jenkins", "Registry", "ArgoCD"],
+          edge: ["Edge", "Telemetry"],
+          build: ["Go", "Rust", "Vue", "Postgres"]
+        };
+
+        function normalizeFocusNodes(value) {
+          if (!value) {
+            return null;
+          }
+
+          const tokens = value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+          return tokens.length ? new Set(tokens) : null;
+        }
+
+        function resolveTriggerFocusNodes(trigger, sceneKey) {
+          const explicitFocus =
+            trigger?.dataset?.focus || trigger?.closest?.(".tech-group[data-focus]")?.dataset?.focus || "";
+          return normalizeFocusNodes(explicitFocus) || normalizeFocusNodes((sceneFocusMap[sceneKey] || []).join(","));
+        }
+
+        function resolveInteractiveTarget(target) {
+          return target?.closest?.(interactiveSelector) || null;
+        }
+
+        function setForcedInteraction(sceneKey, focusNodes) {
+          forcedScene = sceneKey;
+          forcedFocusNodes = focusNodes;
+        }
+
+        function clearForcedInteraction() {
+          forcedScene = null;
+          forcedFocusNodes = null;
+        }
+
+        function scheduleInteractionReset() {
+          if (interactionResetTimer) {
+            clearTimeout(interactionResetTimer);
+          }
+
+          interactionResetTimer = window.setTimeout(() => {
+            clearForcedInteraction();
+            renderScene(scrollScene);
+          }, 900);
+        }
 
         function getViewportFocusY() {
           return window.innerHeight * 0.43;
@@ -2343,6 +2424,9 @@
           const highlightAll = sceneKey === "overview";
           systemShell.style.setProperty("--preview-highlight", data.color);
           systemShell.dataset.highlight = sceneKey;
+          systemShell.classList.toggle("is-interacting", Boolean(forcedScene));
+          systemShell.dataset.focus = forcedFocusNodes ? Array.from(forcedFocusNodes).join(",") : "";
+          canvas.dataset.focus = forcedFocusNodes ? Array.from(forcedFocusNodes).join(",") : "";
 
           orbitNodes.forEach((node) => {
             const match = highlightAll || node.dataset.scene === sceneKey;
@@ -2431,6 +2515,10 @@
           storyCards.forEach((card) => {
             card.classList.toggle("active", card.dataset.scene === sceneKey);
             card.style.setProperty("--card-color", card.dataset.color || data.color);
+          });
+
+          techGroups.forEach((group) => {
+            group.classList.toggle("is-active", group.dataset.scene === sceneKey);
           });
 
           applyPreviewHighlight(sceneKey);
@@ -2531,12 +2619,26 @@
               return;
             }
 
-            forcedScene = sceneKey;
+            if (interactionResetTimer) {
+              clearTimeout(interactionResetTimer);
+            }
+
+            setForcedInteraction(sceneKey, resolveTriggerFocusNodes(trigger, sceneKey));
             renderScene(sceneKey);
           });
 
-          trigger.addEventListener("mouseleave", () => {
-            forcedScene = null;
+          trigger.addEventListener("mouseleave", (event) => {
+            const nextTrigger = resolveInteractiveTarget(event.relatedTarget);
+            if (nextTrigger && nextTrigger !== trigger) {
+              const sceneKey = nextTrigger.dataset.scene;
+              if (sceneKey && sceneData[sceneKey]) {
+                setForcedInteraction(sceneKey, resolveTriggerFocusNodes(nextTrigger, sceneKey));
+                renderScene(sceneKey);
+              }
+              return;
+            }
+
+            clearForcedInteraction();
             renderScene(scrollScene);
           });
 
@@ -2546,7 +2648,11 @@
               return;
             }
 
-            forcedScene = sceneKey;
+            if (interactionResetTimer) {
+              clearTimeout(interactionResetTimer);
+            }
+
+            setForcedInteraction(sceneKey, resolveTriggerFocusNodes(trigger, sceneKey));
             renderScene(sceneKey);
           });
 
@@ -2556,12 +2662,24 @@
               return;
             }
 
+            setForcedInteraction(sceneKey, resolveTriggerFocusNodes(trigger, sceneKey));
             scrollScene = sceneKey;
             renderScene(sceneKey);
+            scheduleInteractionReset();
           });
 
-          trigger.addEventListener("blur", () => {
-            forcedScene = null;
+          trigger.addEventListener("blur", (event) => {
+            const nextTrigger = resolveInteractiveTarget(event.relatedTarget);
+            if (nextTrigger && nextTrigger !== trigger) {
+              const sceneKey = nextTrigger.dataset.scene;
+              if (sceneKey && sceneData[sceneKey]) {
+                setForcedInteraction(sceneKey, resolveTriggerFocusNodes(nextTrigger, sceneKey));
+                renderScene(sceneKey);
+              }
+              return;
+            }
+
+            clearForcedInteraction();
             renderScene(scrollScene);
           });
         });
@@ -2573,7 +2691,7 @@
               return;
             }
 
-            forcedScene = null;
+            clearForcedInteraction();
             scrollScene = sceneKey;
             renderScene(sceneKey);
           });
@@ -2690,8 +2808,6 @@
           summaryObserver.observe(closingSection);
         }
 
-        const canvas = document.getElementById("system-canvas");
-        const ctx = canvas.getContext("2d");
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const pointer = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
         let width = 0;
@@ -2955,6 +3071,9 @@
         function drawBackground() {
           const color = sceneData[activeScene]?.color || "#ee0000";
           const edges = updateNodeTargets();
+          const focusNodes = forcedFocusNodes;
+          const hasFocusedSubset = Boolean(focusNodes?.size);
+          const interactionBoost = forcedScene ? 1.28 : 1;
           ctx.clearRect(0, 0, width, height);
 
           const gradient = ctx.createRadialGradient(
@@ -2996,7 +3115,9 @@
               return;
             }
 
-            ctx.strokeStyle = "rgba(255,255,255,0.09)";
+            const edgeFocused =
+              !hasFocusedSubset || focusNodes.has(fromName) || focusNodes.has(toName);
+            ctx.strokeStyle = edgeFocused ? color + "55" : "rgba(255,255,255,0.035)";
             ctx.beginPath();
             ctx.moveTo(from.drawX, from.drawY);
             const cx = (from.drawX + to.drawX) * 0.5;
@@ -3004,37 +3125,47 @@
             ctx.quadraticCurveTo(cx, cy, to.drawX, to.drawY);
             ctx.stroke();
 
-            const pulse = ((tick * 0.0015 + edgeIndex * 0.13) % 1);
-            const pulseX = from.drawX + (to.drawX - from.drawX) * pulse;
-            const pulseY =
-              from.drawY +
-              (to.drawY - from.drawY) * pulse -
-              Math.sin(pulse * Math.PI) * (18 + edgeIndex * 0.2);
-            ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = color;
-            ctx.arc(pulseX, pulseY, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
+            if (edgeFocused) {
+              const pulse = ((tick * 0.0015 + edgeIndex * 0.13) % 1);
+              const pulseX = from.drawX + (to.drawX - from.drawX) * pulse;
+              const pulseY =
+                from.drawY +
+                (to.drawY - from.drawY) * pulse -
+                Math.sin(pulse * Math.PI) * (18 + edgeIndex * 0.2);
+              ctx.beginPath();
+              ctx.fillStyle = color;
+              ctx.shadowBlur = 12 * interactionBoost;
+              ctx.shadowColor = color;
+              ctx.arc(pulseX, pulseY, 1.8 * interactionBoost, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+            }
           });
 
           nodes.forEach((node) => {
+            const nodeFocused = !hasFocusedSubset || focusNodes.has(node.name);
+            const glowRadius = (14 + node.radius * 1.3) * (nodeFocused ? interactionBoost : 0.76);
             const outer = ctx.createRadialGradient(node.drawX, node.drawY, 0, node.drawX, node.drawY, 28);
-            outer.addColorStop(0, color + "55");
+            outer.addColorStop(0, nodeFocused ? color + "66" : color + "1f");
             outer.addColorStop(1, "rgba(0,0,0,0)");
             ctx.fillStyle = outer;
             ctx.beginPath();
-            ctx.arc(node.drawX, node.drawY, 14 + node.radius * 1.3, 0, Math.PI * 2);
+            ctx.arc(node.drawX, node.drawY, glowRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = "rgba(255,255,255,0.82)";
+            ctx.fillStyle = nodeFocused ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.48)";
             ctx.beginPath();
-            ctx.arc(node.drawX, node.drawY, Math.max(2.6, node.radius), 0, Math.PI * 2);
+            ctx.arc(
+              node.drawX,
+              node.drawY,
+              Math.max(2.4, node.radius * (nodeFocused ? interactionBoost : 0.78)),
+              0,
+              Math.PI * 2
+            );
             ctx.fill();
 
             const labelThreshold = width <= 760 ? 4 : 8;
-            if (node.base >= labelThreshold) {
+            if (node.base >= labelThreshold || (hasFocusedSubset && nodeFocused)) {
               drawNodeLabel(node);
             }
           });
@@ -3072,6 +3203,10 @@
         window.addEventListener("beforeunload", () => {
           if (animationFrame) {
             cancelAnimationFrame(animationFrame);
+          }
+
+          if (interactionResetTimer) {
+            clearTimeout(interactionResetTimer);
           }
 
           if (signalTimer) {
